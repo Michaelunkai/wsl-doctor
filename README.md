@@ -5,8 +5,11 @@
 **One-click WSL2 + Docker Desktop repair for Windows — a single dependency-free Rust binary.**
 
 ![Rust](https://img.shields.io/badge/Rust-std%20only-orange?logo=rust)
+![Dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4?logo=windows)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+**No installer. No admin prompt until the work starts. No ambiguity about what is broken.**
 
 </div>
 
@@ -38,9 +41,17 @@ scheduled tasks so the same problems repair themselves in the future.
 
 ## Usage
 
+Run the prebuilt binary that ships next to the source — no Rust toolchain required:
+
+```powershell
+.\wsl-doctor.exe            # interactive repair (asks for admin via UAC)
+```
+
+Or build from source (pure `std`, ~390 KB release binary):
+
 ```powershell
 cargo build --release
-.\target\release\wsl-doctor.exe          # interactive repair (asks for admin via UAC)
+.\target\release\wsl-doctor.exe
 ```
 
 | Command | Purpose |
@@ -53,14 +64,21 @@ cargo build --release
 Sample output:
 
 ```
+[1/8] Reading firmware / hypervisor / Windows feature state (about 10s) ...
+      -> firmware virt=true, hypervisor running=true, VMP=Enabled, WSL feature=Enabled (9.8s)
+[2/8] Boot configuration (hypervisorlaunchtype) ...
+      -> already Auto
 [4/8] WSL installer cache repair (fixes update error 1603) ...
       -> MSI cache present (0.5s)
 [5/8] Updating WSL (live output) ...
       -> wsl --update exit 0; WSL version: 3.0.5.0 (0.3s)
 ...
-Everything is fixed except loading the hypervisor, which Windows only does at boot.
-Reboot now? Press Y to reboot, anything else to stay:
+Ubuntu check: exit 0: Linux 6.6.87
+
+ALL FIXED. Nothing left to do.
 ```
+
+The tool is **idempotent** — safe to run any number of times; it only acts on what is actually broken.
 
 ## ⚠️ Honest limitation: one reboot
 
@@ -70,10 +88,11 @@ tasks finish the Docker and WSL2 setup automatically.
 
 ## Design
 
-- Pure Rust, standard library only — no crates, ~390 KB release binary.
-- Self-elevates once (guarded, no relaunch loops); every step prints before it runs, so nothing hangs silently.
-- Idempotent: safe to run any number of times.
+- Pure Rust, standard library only — **zero crates**, ~390 KB release binary.
+- Self-elevates once (guarded, no relaunch loops); every step prints *before* it runs, so nothing hangs silently.
+- Isolated steps: one failure never blocks the others; the run always reaches the summary and never fails the shell.
+- Docker Desktop settings are backed up to `settings-store.json.wsl-doctor.bak` before any change.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
